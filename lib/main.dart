@@ -24,6 +24,10 @@ void main() async {
         Provider<DatabaseService>(
           create: (_) => DatabaseService(),
         ),
+        StreamProvider<User?>.value(
+          value: FirebaseAuth.instance.authStateChanges(),
+          initialData: null,
+        ),
       ],
       child: const MyApp(),
     ),
@@ -35,27 +39,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<User?>(context);
+
     return MaterialApp(
       title: 'Chat App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          // 等待 Firebase 初始化
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          // 使用者已登入
-          if (snapshot.hasData) {
-            return HomePage();
-          }
-
-          // 沒登入 → 回到登入頁
-          return const AuthPage();
-        },
-      ),
+      home: user == null ? const AuthPage() : HomePage(),
     );
   }
 }
