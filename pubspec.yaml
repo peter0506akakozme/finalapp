@@ -39,10 +39,17 @@ dependencies:
   firebase_auth: ^4.17.4
   cloud_firestore: ^4.0.0
   firebase_storage: ^11.0.0
+  firebase_messaging: ^14.7.20
   image_picker: ^0.8.5
   provider: ^6.0.0
   cached_network_image: ^3.2.0
   intl: ^0.17.0
+  file_picker: ^6.1.1
+  permission_handler: ^11.3.1
+  flutter_local_notifications: ^17.2.2
+  connectivity_plus: ^5.0.2
+  video_player: ^2.8.2
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   flutter_test:

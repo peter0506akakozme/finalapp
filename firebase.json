@@ -1,1 +1,9 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"finalprojectapp-unltimedia","appId":"1:1014629558804:android:6e2123d90db6bc65a79501","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"finalprojectapp-unltimedia","configurations":{"android":"1:1014629558804:android:6e2123d90db6bc65a79501","ios":"1:1014629558804:ios:7c35a0892ac50484a79501","macos":"1:1014629558804:ios:7c35a0892ac50484a79501","web":"1:1014629558804:web:a8e7b6630e4d6dbca79501","windows":"1:1014629558804:web:c66ef47fd4310690a79501"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+} 

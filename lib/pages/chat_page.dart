@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../models/model.dart';
 import '../widgets/message_bubble.dart';
+import '../services/media_service.dart';
 
 class ChatPage extends StatefulWidget {
   @override
@@ -164,6 +165,8 @@ class _ChatDetailBody extends StatefulWidget {
 class __ChatDetailBodyState extends State<_ChatDetailBody> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final MediaService _mediaService = MediaService();
+  bool _isSending = false;
 
   @override
   Widget build(BuildContext context) {
@@ -222,48 +225,293 @@ class __ChatDetailBodyState extends State<_ChatDetailBody> {
     return Container(
       padding: EdgeInsets.all(8),
       color: Colors.grey[200],
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: TextField(
-            controller: _messageController,
-              decoration: InputDecoration(
-                hintText: '輸入訊息...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+          // 媒體選擇按鈕
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.photo_library, color: Colors.blue),
+                onPressed: _isSending ? null : () => _sendImage(currentUserId),
+                tooltip: '選擇圖片',
+              ),
+              IconButton(
+                icon: Icon(Icons.camera_alt, color: Colors.blue),
+                onPressed: _isSending ? null : () => _takePhoto(currentUserId),
+                tooltip: '拍攝圖片',
+              ),
+              IconButton(
+                icon: Icon(Icons.videocam, color: Colors.blue),
+                onPressed: _isSending ? null : () => _sendVideo(currentUserId),
+                tooltip: '選擇影片',
+              ),
+              IconButton(
+                icon: Icon(Icons.attach_file, color: Colors.blue),
+                onPressed: _isSending ? null : () => _sendFile(currentUserId),
+                tooltip: '選擇檔案',
+              ),
+              Spacer(),
+            ],
+          ),
+          // 訊息輸入區域
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _messageController,
+                  decoration: InputDecoration(
+                    hintText: '輸入訊息...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  enabled: !_isSending,
                 ),
               ),
-            ),
+              SizedBox(width: 8),
+              IconButton(
+                icon: _isSending 
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(Icons.send),
+                color: Colors.blue,
+                onPressed: _isSending ? null : () => _sendMessage(currentUserId),
+              ),
+            ],
           ),
-          SizedBox(width: 8),
-          IconButton(
-            icon: Icon(Icons.send),
-            color: Colors.blue,
-            onPressed: () async {
-              if (_messageController.text.trim().isEmpty) return;
-
-              await FirebaseFirestore.instance
-                  .collection('chats/${widget.chatId}/messages')
-                  .add({
-                'senderId': currentUserId,
-                'content': _messageController.text.trim(),
-                'timestamp': FieldValue.serverTimestamp(),
-              });
-
-              // 更新聊天的最後訊息
-              await FirebaseFirestore.instance
-                  .collection('chats')
-                  .doc(widget.chatId)
-                  .update({
-                'lastMessage': _messageController.text.trim(),
-                'lastMessageTime': FieldValue.serverTimestamp(),
-              });
-
-              _messageController.clear();
-            },
-          ),
-        ]),
+        ],
+      ),
     );
+  }
+
+  Future<void> _sendMessage(String currentUserId) async {
+    if (_messageController.text.trim().isEmpty) return;
+
+    setState(() {
+      _isSending = true;
+    });
+
+    try {
+      final messageContent = _messageController.text.trim();
+      _messageController.clear();
+
+      await FirebaseFirestore.instance
+          .collection('chats/${widget.chatId}/messages')
+          .add({
+        'senderId': currentUserId,
+        'content': messageContent,
+        'messageType': 'text',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.chatId)
+          .update({
+        'lastMessage': messageContent,
+        'lastMessageTime': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      _messageController.text = _messageController.text;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('發送失敗: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isSending = false;
+      });
+    }
+  }
+
+  Future<void> _sendImage(String currentUserId) async {
+    print('開始發送圖片...');
+    setState(() {
+      _isSending = true;
+    });
+
+    try {
+      print('調用 MediaService.uploadImage()...');
+      final imageUrl = await _mediaService.uploadImage();
+      print('MediaService 返回: $imageUrl');
+      
+      if (imageUrl != null) {
+        print('開始保存訊息到 Firestore...');
+        await FirebaseFirestore.instance
+            .collection('chats/${widget.chatId}/messages')
+            .add({
+          'senderId': currentUserId,
+          'content': '圖片',
+          'messageType': 'image',
+          'imageUrl': imageUrl,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        print('更新聊天最後訊息...');
+        await FirebaseFirestore.instance
+            .collection('chats')
+            .doc(widget.chatId)
+            .update({
+          'lastMessage': '圖片',
+          'lastMessageTime': FieldValue.serverTimestamp(),
+        });
+        
+        print('圖片發送成功！');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('圖片發送成功'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        print('圖片上傳失敗，返回 null');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('圖片上傳失敗，請檢查網路連接'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('圖片發送過程中發生錯誤: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('圖片發送失敗: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isSending = false;
+      });
+    }
+  }
+
+  Future<void> _takePhoto(String currentUserId) async {
+    setState(() {
+      _isSending = true;
+    });
+
+    try {
+      final imageUrl = await _mediaService.takePhoto();
+      if (imageUrl != null) {
+        await FirebaseFirestore.instance
+            .collection('chats/${widget.chatId}/messages')
+            .add({
+          'senderId': currentUserId,
+          'content': '圖片',
+          'messageType': 'image',
+          'imageUrl': imageUrl,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        await FirebaseFirestore.instance
+            .collection('chats')
+            .doc(widget.chatId)
+            .update({
+          'lastMessage': '圖片',
+          'lastMessageTime': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('圖片發送失敗: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isSending = false;
+      });
+    }
+  }
+
+  Future<void> _sendVideo(String currentUserId) async {
+    setState(() {
+      _isSending = true;
+    });
+
+    try {
+      final videoUrl = await _mediaService.uploadVideo();
+      if (videoUrl != null) {
+        await FirebaseFirestore.instance
+            .collection('chats/${widget.chatId}/messages')
+            .add({
+          'senderId': currentUserId,
+          'content': '影片',
+          'messageType': 'video',
+          'videoUrl': videoUrl,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        await FirebaseFirestore.instance
+            .collection('chats')
+            .doc(widget.chatId)
+            .update({
+          'lastMessage': '影片',
+          'lastMessageTime': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('影片發送失敗: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isSending = false;
+      });
+    }
+  }
+
+  Future<void> _sendFile(String currentUserId) async {
+    setState(() {
+      _isSending = true;
+    });
+
+    try {
+      final fileData = await _mediaService.uploadFile();
+      if (fileData != null) {
+        await FirebaseFirestore.instance
+            .collection('chats/${widget.chatId}/messages')
+            .add({
+          'senderId': currentUserId,
+          'content': '檔案',
+          'messageType': 'file',
+          'fileUrl': fileData['url'],
+          'fileName': fileData['fileName'],
+          'fileSize': fileData['fileSize'],
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        await FirebaseFirestore.instance
+            .collection('chats')
+            .doc(widget.chatId)
+            .update({
+          'lastMessage': '檔案: ${fileData['fileName']}',
+          'lastMessageTime': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('檔案發送失敗: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isSending = false;
+      });
+    }
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'package:finalapp/pages/server_page.dart';
 import 'package:finalapp/pages/setting_page.dart';
+import 'package:finalapp/pages/friends_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -44,13 +45,14 @@ class _HomeScreenState extends State<HomePage> {
             }
           },
         ),
-        title: Text(_selectedIndex == 0 ? '我的伺服器' : '好友聊天'),
+        title: Text(_getTitle()),
       ),
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          ServerPage(),
+          FriendsPage(),
           ChatPage(),
+          ServerPage(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -58,16 +60,33 @@ class _HomeScreenState extends State<HomePage> {
         onTap: (index) => setState(() => _selectedIndex = index),
         items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.dns),
-            label: '伺服器',
+            icon: Icon(Icons.people),
+            label: '好友',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat),
             label: '聊天',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dns),
+            label: '伺服器',
+          ),
         ],
       ),
     );
+  }
+
+  String _getTitle() {
+    switch (_selectedIndex) {
+      case 0:
+        return '好友';
+      case 1:
+        return '聊天';
+      case 2:
+        return '伺服器';
+      default:
+        return '應用程式';
+    }
   }
 
   Widget _buildDrawer(User currentUser) {
@@ -88,12 +107,32 @@ class _HomeScreenState extends State<HomePage> {
           ),
           ListTile(
             leading: Icon(Icons.people),
-            title: Text('好友列表'),
+            title: Text('好友'),
+            selected: _selectedIndex == 0,
+            onTap: () {
+              Navigator.pop(context);
+              setState(() => _selectedIndex = 0);
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.chat),
+            title: Text('聊天'),
+            selected: _selectedIndex == 1,
             onTap: () {
               Navigator.pop(context);
               setState(() => _selectedIndex = 1);
             },
           ),
+          ListTile(
+            leading: Icon(Icons.dns),
+            title: Text('伺服器'),
+            selected: _selectedIndex == 2,
+            onTap: () {
+              Navigator.pop(context);
+              setState(() => _selectedIndex = 2);
+            },
+          ),
+          Divider(),
           ListTile(
             leading: Icon(Icons.settings),
             title: Text('設定'),
@@ -103,15 +142,6 @@ class _HomeScreenState extends State<HomePage> {
                 context,
                 MaterialPageRoute(builder: (context) => SettingsPage()),
               );
-            },
-          ),
-          Spacer(),
-          ListTile(
-            leading: Icon(Icons.logout),
-            title: Text('登出'),
-            onTap: () {
-              Provider.of<AuthService>(context, listen: false).signOut();
-              Navigator.pop(context);
             },
           ),
         ],

@@ -190,8 +190,54 @@ class _SettingsPageState extends State<SettingsPage> {
                   style: TextStyle(color: Colors.red),
                 ),
                 trailing: Icon(Icons.logout, color: Colors.red),
-                onTap: () {
-                  Provider.of<AuthService>(context, listen: false).signOut();
+                onTap: () async {
+                  // 顯示確認對話框
+                  bool? confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('確認登出'),
+                        content: Text('您確定要登出嗎？'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text('取消'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: Text('登出'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+
+                  if (confirm == true) {
+                    try {
+                      setState(() => _isLoading = true);
+                      
+                      // 執行登出
+                      await Provider.of<AuthService>(context, listen: false).signOut();
+                      
+                      // 登出成功後會自動導航到登入頁面（因為 authStateChanges 會監聽狀態變化）
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('已成功登出'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      print('登出錯誤詳情: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('登出失敗，請稍後再試'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    } finally {
+                      setState(() => _isLoading = false);
+                    }
+                  }
                 },
               ),
             ],

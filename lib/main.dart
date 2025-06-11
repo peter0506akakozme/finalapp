@@ -2,6 +2,7 @@ import 'package:finalapp/pages/auth_page.dart';
 import 'package:finalapp/pages/home_page.dart';
 import 'package:finalapp/services/auth_service.dart';
 import 'package:finalapp/services/database_service.dart';
+import 'package:finalapp/services/friend_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -23,6 +24,9 @@ void main() async {
         ),
         Provider<DatabaseService>(
           create: (_) => DatabaseService(),
+        ),
+        Provider<FriendService>(
+          create: (_) => FriendService(),
         ),
         StreamProvider<User?>.value(
           value: FirebaseAuth.instance.authStateChanges(),

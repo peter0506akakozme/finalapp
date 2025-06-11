@@ -72,21 +72,41 @@ class AuthService {
   }
 
   // 登出
-  Future signOut() async {
+  Future<void> signOut() async {
     try {
       // 更新用戶狀態為離線
       final user = _auth.currentUser;
       if (user != null) {
-        await _firestore.collection('users').doc(user.uid).update({
-          'status': 'offline',
-          'lastSeen': FieldValue.serverTimestamp(),
-        });
+        // 先檢查用戶文檔是否存在
+        final userDoc = await _firestore.collection('users').doc(user.uid).get();
+        
+        if (userDoc.exists) {
+          // 如果文檔存在，更新狀態
+          await _firestore.collection('users').doc(user.uid).update({
+            'isOnline': false,
+            'lastSeen': FieldValue.serverTimestamp(),
+            'fcmToken': null, // 清除推播通知 token
+          });
+        } else {
+          // 如果文檔不存在，創建基本文檔
+          await _firestore.collection('users').doc(user.uid).set({
+            'uid': user.uid,
+            'email': user.email ?? '',
+            'username': user.displayName ?? '用戶',
+            'avatarUrl': '',
+            'isOnline': false,
+            'lastSeen': FieldValue.serverTimestamp(),
+            'fcmToken': null,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
       }
 
-      return await _auth.signOut();
+      // 執行 Firebase Auth 登出
+      await _auth.signOut();
     } catch (e) {
-      print(e.toString());
-      return null;
+      print('登出錯誤: $e');
+      throw Exception('登出失敗: $e');
     }
   }
 }
