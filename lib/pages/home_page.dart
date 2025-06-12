@@ -1,6 +1,7 @@
 import 'package:finalapp/pages/server_page.dart';
 import 'package:finalapp/pages/setting_page.dart';
 import 'package:finalapp/pages/friends_page.dart';
+import 'package:finalapp/pages/test_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -141,6 +142,17 @@ class _HomeScreenState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => SettingsPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.bug_report),
+            title: Text('檔案功能測試'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TestPage()),
               );
             },
           ),
