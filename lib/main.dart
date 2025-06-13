@@ -3,6 +3,7 @@ import 'package:finalapp/pages/home_page.dart';
 import 'package:finalapp/services/auth_service.dart';
 import 'package:finalapp/services/database_service.dart';
 import 'package:finalapp/services/friend_service.dart';
+import 'package:finalapp/services/call_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -16,6 +17,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // 初始化通話服務
+  final callService = CallService();
+  await callService.initialize();
+
   runApp(
     MultiProvider(
       providers: [
@@ -27,6 +32,9 @@ void main() async {
         ),
         Provider<FriendService>(
           create: (_) => FriendService(),
+        ),
+        Provider<CallService>(
+          create: (_) => callService,
         ),
         StreamProvider<User?>.value(
           value: FirebaseAuth.instance.authStateChanges(),

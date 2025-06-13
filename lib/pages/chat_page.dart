@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../models/model.dart';
 import '../widgets/message_bubble.dart';
 import '../services/media_service.dart';
+import 'call_page.dart';
 
 class ChatPage extends StatefulWidget {
   @override
@@ -137,6 +138,42 @@ class ChatDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(otherUserName),
+        actions: [
+          // 語音通話按鈕
+          IconButton(
+            icon: const Icon(Icons.call, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CallPage(
+                    targetUserId: otherUserId,
+                    targetUserName: otherUserName,
+                    callType: 'voice',
+                  ),
+                ),
+              );
+            },
+            tooltip: '語音通話',
+          ),
+          // 視訊通話按鈕
+          IconButton(
+            icon: const Icon(Icons.videocam, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CallPage(
+                    targetUserId: otherUserId,
+                    targetUserName: otherUserName,
+                    callType: 'video',
+                  ),
+                ),
+              );
+            },
+            tooltip: '視訊通話',
+          ),
+        ],
       ),
       body: _ChatDetailBody(
         chatId: chatId,
